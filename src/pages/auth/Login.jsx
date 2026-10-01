@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FiMail, FiLock, FiAlertCircle, FiArrowRight, FiEye, FiEyeOff, FiUser, FiBriefcase } from "react-icons/fi";
 import Navbar from "../../components/common/Navbar";
@@ -36,10 +36,9 @@ const Login = () => {
         try {
             const data = await loginUser({ email: email.trim(), password });
             if (data?.token || data?.accessToken) {
-                login(data);
-
-                // Check user role from response
                 const role = data.role || data.user?.role;
+                await login(data, role);
+
                 const requestedFrom = location.state?.from?.pathname || new URLSearchParams(location.search).get("redirect");
                 const safeDestination = sanitizeRedirectPath(requestedFrom, role);
                 navigate(safeDestination, { replace: true });
@@ -112,7 +111,7 @@ const Login = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
+                                    placeholder="ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢"
                                     className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-10 py-2.5 text-slate-800 outline-none focus:bg-white focus:border-indigo-600 transition"
                                 />
                                 <button
@@ -131,7 +130,7 @@ const Login = () => {
                         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3 space-y-2">
                             <div className="flex items-center justify-between text-[11px] font-bold text-indigo-900">
                                 <span className="flex items-center gap-1">
-                                    <span>⚡</span> Quick Demo Login
+                                    <span>ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡</span> Quick Demo Login
                                 </span>
                                 <span className="text-[10px] text-indigo-600 font-semibold">1-Click Auto-Fill</span>
                             </div>

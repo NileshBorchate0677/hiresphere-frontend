@@ -4,41 +4,26 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BA
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-
-    // Required for HttpOnly refreshToken cookie
     withCredentials: true,
-
     headers: {
         "Content-Type": "application/json",
     },
 });
 
-
-// ================================
-// REQUEST INTERCEPTOR
-// ================================
-
 api.interceptors.request.use(
     (config) => {
-
         const token = localStorage.getItem("accessToken");
-
-        if (token) {
+        if (token && typeof token === "string" && token !== "[object Object]") {
             config.headers.Authorization = `Bearer ${token}`;
         }
-
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (refreshToken && typeof refreshToken === "string" && refreshToken !== "[object Object]") {
+            config.headers["X-Refresh-Token"] = refreshToken;
+        }
         return config;
     },
-
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
-
-
-// ================================
-// RESPONSE INTERCEPTOR (Auto Token Refresh)
-// ================================
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -55,18 +40,15 @@ const processQueue = (error, token = null) => {
 };
 
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
-
+    (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
-            // Avoid looping if refresh endpoint itself failed or auth login failed
             if (originalRequest.url?.includes("/user/auth/refresh") || originalRequest.url?.includes("/user/auth/login")) {
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("userRole");
+                localStorage.removeItem("refreshToken");
                 return Promise.reject(error);
             }
 
@@ -85,16 +67,23 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                // Call refresh endpoint - refreshToken is sent in HttpOnly cookie
+                const storedRefreshToken = localStorage.getItem("refreshToken");
                 const response = await axios.post(
                     `${API_BASE_URL}/user/auth/refresh`,
                     {},
-                    { withCredentials: true }
+                    {
+                        withCredentials: true,
+                        headers: (storedRefreshToken && storedRefreshToken !== "[object Object]") ? { "X-Refresh-Token": storedRefreshToken } : {}
+                    }
                 );
 
                 const newAccessToken = response.data?.accessToken;
+                const newRefreshToken = response.data?.refreshToken;
                 if (newAccessToken) {
                     localStorage.setItem("accessToken", newAccessToken);
+                    if (newRefreshToken) {
+                        localStorage.setItem("refreshToken", newRefreshToken);
+                    }
                     originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                     processQueue(null, newAccessToken);
                     return api(originalRequest);
@@ -105,7 +94,10 @@ api.interceptors.response.use(
                 processQueue(refreshError, null);
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("userRole");
-                window.location.href = "/login";
+                localStorage.removeItem("refreshToken");
+                if (window.location.pathname !== "/login" && !window.location.pathname.startsWith("/login")) {
+                    window.location.href = "/login";
+                }
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
@@ -115,6 +107,5 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-
 
 export default api;
